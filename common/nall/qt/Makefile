@@ -64,17 +64,17 @@ else ifeq ($(platform),win)
 endif
 
 ifeq ($(moc),)
-  # ifeq ($(qtpath),)
+  ifeq ($(qtpath),)
     moc := moc
-  # else
-    # moc := $(qtpath)/bin/moc
-  # endif
+  else
+    moc := $(qtpath)/bin/moc
+  endif
 endif
 
 ifeq ($(rcc),)
-  # ifeq ($(qtpath),)
+  ifeq ($(qtpath),)
     rcc := rcc
-  # else
-    # rcc := $(qtpath)/bin/rcc
-  # endif
+  else
+    rcc := $(qtpath)/bin/rcc
+  endif
 endif
