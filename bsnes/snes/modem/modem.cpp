@@ -1,8 +1,20 @@
+#ifdef _WIN32
+#include <winsock2.h>
+#endif
+
 #include <snes.hpp>
 #include <sys/types.h>
+#if !defined(PLATFORM_WIN)
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#else
+#include <ws2tcpip.h>
+int inet_aton(const char* str, struct in_addr* adr){
+	adr->s_addr = inet_addr(str);
+	return 1;
+}
+#endif
 #include <fcntl.h>
 #include <errno.h>
 
@@ -38,7 +50,7 @@ bool Modem::hasData(void)
 	int res;
 
 	if (socketfd != -1) {
-		res = recv(socketfd, &d, 1, 0);
+		res = recv(socketfd, (char*)&d, 1, 0);
 		if (res < 0) {
 			if ((errno != EAGAIN) && (errno != EWOULDBLOCK)) {
 				perror("recv");
@@ -105,7 +117,7 @@ void Modem::writeData(uint8 data)
     case Connected:
 	  printf("%02x ", data); fflush(stdout);
 	  if (socketfd >= 0) {
-		  if (send(socketfd, &data, 1, 0)<0) {
+		  if (send(socketfd, (char*)&data, 1, 0)<0) {
 			  perror("send");
 		  }
 	  }
@@ -120,8 +132,8 @@ bool Modem::canWrite()
 
 void Modem::processCommandBuffer(void)
 {
-	const char *OK = "\r\nOK\r\n";
-	const char *ERROR = "\r\nERROR\r\n";
+	const char *MsgOK = "\r\nOK\r\n";
+	const char *MsgERROR = "\r\nERROR\r\n";
 
 	if (strncmp((char*)lbuf, "AT", 2)) {
 		printf("???: \"%s\"\n", (char*)lbuf);
@@ -132,17 +144,17 @@ void Modem::processCommandBuffer(void)
 
 	if (strcmp((char*)lbuf, "ATE1Q0V1")==0) {
 		echo_on = true;
-    	answerCommand(OK);
+    	answerCommand(MsgOK);
 		return;
 	}
 
 	if (strcmp((char*)lbuf, "AT&F&W0&W1")==0) {
-    	answerCommand(OK);
+    	answerCommand(MsgOK);
 		return;
 	}
 
 	if (strcmp((char*)lbuf, "ATZ")==0) {
-    	answerCommand(OK);
+    	answerCommand(MsgOK);
 		return;
 	}
 
@@ -151,13 +163,13 @@ void Modem::processCommandBuffer(void)
 		// note: JRA PAT sends ATP&P1 or ATP&P2 depending on line classification.
 		// &P1: 100pps
 		// &P2: 200pps
-    	answerCommand(OK);
+    	answerCommand(MsgOK);
 		return;
 	}
 
 	// ATT : Set tone dialing
 	if (strncmp((char*)lbuf, "ATT", 3)==0) {
-    	answerCommand(OK);
+    	answerCommand(MsgOK);
 		return;
 	}
 
@@ -166,25 +178,25 @@ void Modem::processCommandBuffer(void)
 		int reg, value;
 		if (2 == sscanf((char*)lbuf, "ATS%d=%d", &reg, &value)) {
 			printf("Set S register %d to %d\n", reg, value);
-    		answerCommand(OK);
+    		answerCommand(MsgOK);
 		} else {
-			answerCommand(ERROR);
+			answerCommand(MsgERROR);
 		}
 		return;
 	}
 
 	// ATL: Set speaker volume (0-3)
 	if (strncmp((char*)lbuf, "ATL", 3)==0) {
-    	answerCommand(OK);
+    	answerCommand(MsgOK);
 		return;
 	}
 
 	// Error
 	if (strncmp((char*)lbuf, "ATX", 3)==0) {
 		if (1 == sscanf((char*)lbuf, "ATX%d", &atx)) {
-    		answerCommand(OK);
+    		answerCommand(MsgOK);
 		} else {
-    		answerCommand(ERROR);
+    		answerCommand(MsgERROR);
 		}
 		return;
 	}
@@ -193,25 +205,25 @@ void Modem::processCommandBuffer(void)
 	if (strncmp((char*)lbuf, "AT%B", 4)==0) {
 		if (1==sscanf((char*)lbuf, "AT%%B%d", &connection_rate)) {
 			printf("Requesting connection baud rate %d\n", connection_rate);
-    		answerCommand(OK);
+    		answerCommand(MsgOK);
 		} else {
-			answerCommand(ERROR);
+			answerCommand(MsgERROR);
 		}
 		return;
 	}
 
 	if (strcmp((char*)lbuf, "AT\\N0%C0")==0) {
-    	answerCommand(OK);
+    	answerCommand(MsgOK);
 		return;
 	}
 
 	if (strcmp((char*)lbuf, "AT\\N3%C0")==0) {
-    	answerCommand(OK);
+    	answerCommand(MsgOK);
 		return;
 	}
 
 	if (strcmp((char*)lbuf, "AT\\N3%C1")==0) {
-    	answerCommand(OK);
+    	answerCommand(MsgOK);
 		return;
 	}
 
@@ -243,7 +255,10 @@ void Modem::processCommandBuffer(void)
 		}
 
 
-
+#if _WIN32
+		u_long val=0;
+		ioctlsocket(socketfd, FIONBIO, &val);
+#else
 		flags = fcntl(socketfd, F_GETFL, 0);
 		if (flags == -1) {
 			perror("fcntl");
@@ -262,7 +277,7 @@ void Modem::processCommandBuffer(void)
 			answerCommand("\r\nBUSY\r\n");
 			return;
 		}
-
+#endif
 
 		snprintf(connectStr, 32, "\r\nCONNECT %d\r\n", connection_rate);
 		answerCommand(connectStr);

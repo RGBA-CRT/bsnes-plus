@@ -49,7 +49,7 @@ $(objdir)/snes-dsp.o      : $(snesdsp)/dsp.cpp $(call rwildcard,$(snesdsp)/) $(c
 $(objdir)/snes-ppu.o      : $(snesppu)/ppu.cpp $(call rwildcard,$(snesppu)/) $(call rwildcard,$(snes)/debugger)
 $(objdir)/snes-cartridge.o: $(snes)/cartridge/cartridge.cpp $(call rwilddcard,$(snes)/cartridge/)
 $(objdir)/snes-cheat.o    : $(snes)/cheat/cheat.cpp $(call rwildcard,$(snes)/cheat/)
-$(objdir)/snes-modem.o    : $(snes)/cheat/cheat.cpp $(call rwildcard,$(snes)/modem/)
+$(objdir)/snes-modem.o    : $(snes)/modem/modem.cpp $(call rwildcard,$(snes)/modem/)
 
 $(objdir)/snes-supergameboy.o: $(snes)/chip/supergameboy/supergameboy.cpp $(call rwildcard,$(snes)/chip/supergameboy/)
 $(objdir)/snes-superfx.o     : $(snes)/chip/superfx/superfx.cpp $(call rwildcard,$(snes)/chip/superfx/) $(call rwildcard,$(snes)/debugger)
@@ -64,7 +64,7 @@ $(objdir)/snes-obc1.o        : $(snes)/chip/obc1/obc1.cpp $(snes)/chip/obc1/*
 $(objdir)/snes-st0018.o      : $(snes)/chip/st0018/st0018.cpp $(snes)/chip/st0018/*
 $(objdir)/snes-msu1.o        : $(snes)/chip/msu1/msu1.cpp $(snes)/chip/msu1/*
 $(objdir)/snes-serial.o      : $(snes)/chip/serial/serial.cpp $(snes)/chip/serial/*
-$(objdir)/snes-amdflash.o    : $(snes)/chip/serial/serial.cpp $(snes)/chip/amdflash/*
+$(objdir)/snes-amdflash.o    : $(snes)/chip/amdflash/amdflash.cpp $(snes)/chip/amdflash/*
 
 ###########
 # library #

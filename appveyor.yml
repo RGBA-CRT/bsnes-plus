@@ -54,12 +54,3 @@ build_script:
     7z a ..\..\bsnes-plus-v%APPVEYOR_BUILD_VERSION%.zip *
 artifacts:
 - path: bsnes-plus-v$(appveyor_build_version).zip
-deploy:
-  provider: FTP
-  protocol: ftps
-  host: revenant1.net
-  username: bsnes@revenant1.net
-  password:
-    secure: McbB8gC1DEt670JWHHuiEBkZm+yhXYzqgRC6iHeb1AE=
-  folder:
-  artifact:

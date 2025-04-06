@@ -540,7 +540,7 @@ void MainWindow::setPort2Justifiers() {
 
 void MainWindow::setPort2DataModem() {
   config().input.port2 = ControllerPort2::DataModem;
-  SNES::config.controller_port2 = SNES::Input::Device::DataModem;
+  SNES::config().controller_port2 = SNES::Input::Device::DataModem;
   utility.updateControllers();
 }
 
