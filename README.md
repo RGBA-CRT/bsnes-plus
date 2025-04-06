@@ -26,7 +26,7 @@ Non-debugging features:
 
 ## Development builds
 
-[![Build status](https://ci.appveyor.com/api/projects/status/2eatkcuu14r8rnfx/branch/master?svg=true)](https://ci.appveyor.com/project/devinacker/bsnes-plus/branch/master)
+[![Build status](https://ci.appveyor.com/api/projects/status/csrbd6873qmjv8bn/branch/rgbacrt/jra-pat?svg=true)](https://ci.appveyor.com/project/RGBA-CRT/bsnes-plus/branch/rgbacrt/jra-pat)
 
 Up-to-date development builds are available [here](https://revenant1.net/bsnes/build/) (64-bit Windows, compatibility and accuracy profiles).
 
