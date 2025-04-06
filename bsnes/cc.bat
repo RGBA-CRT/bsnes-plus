@@ -1,2 +1,2 @@
-@mingw32-make -j 2
+@mingw32-make build platform=msys profile=accuracy 
 @pause

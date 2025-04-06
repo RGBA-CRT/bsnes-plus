@@ -108,6 +108,7 @@ bool Cartridge::loadNormal(const char *base) {
 
   loadMemory(baseName, ".srm", SNES::memory::cartram);
   loadMemory(baseName, ".rtc", SNES::memory::cartrtc);
+  loadMemory(baseName, ".flh", SNES::memory::cartflash);
 
   fileName = baseName;
   name = notdir(nall::basename(baseName));
@@ -294,6 +295,7 @@ void Cartridge::saveMemory() {
     case SNES::Cartridge::Mode::BsxSlotted: {
       saveMemory(baseName, ".srm", SNES::memory::cartram);
       saveMemory(baseName, ".rtc", SNES::memory::cartrtc);
+      saveMemory(baseName, ".flh", SNES::memory::cartflash);
     } break;
 
     case SNES::Cartridge::Mode::Bsx: {
@@ -483,6 +485,9 @@ bool Cartridge::loadCartridge(string &filename, string &xml, SNES::MappedRAM &me
   unsigned size;
   audio.clear();
   if(reader.load(filename, data, size) == false) return false;
+
+print(filename);
+
 
   patchApplied = "";
 

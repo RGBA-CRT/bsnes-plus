@@ -1,6 +1,7 @@
 #include "ui-base.hpp"
 #include "resource.rcc"
 
+#define PLATFORM_WIN
 #if defined(PLATFORM_X)
   #include "platform/platform_x.cpp"
   const char Style::Monospace[64] = "monospace";

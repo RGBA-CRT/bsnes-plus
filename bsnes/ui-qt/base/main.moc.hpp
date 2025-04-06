@@ -50,6 +50,7 @@ public:
       RadioAction *system_port2_superscope;
       RadioAction *system_port2_justifier;
       RadioAction *system_port2_justifiers;
+      RadioAction *system_port2_data_modem;
     QAction *system_exit;
   QMenu *settings;
     QMenu *settings_videoMode;
@@ -138,6 +139,7 @@ public slots:
   void setPort2SuperScope();
   void setPort2Justifier();
   void setPort2Justifiers();
+  void setPort2DataModem();
   void quit();
   void setVideoMode1x();
   void setVideoMode2x();
