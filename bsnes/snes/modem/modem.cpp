@@ -8,15 +8,52 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+int platform_startup(){return 0;}
 #else
+#include<windows.h>
 #include <ws2tcpip.h>
-int inet_aton(const char* str, struct in_addr* adr){
+static int inet_aton(const char* str, struct in_addr* adr){
 	adr->s_addr = inet_addr(str);
+	fprintf(stderr, "%08x %s\n", adr->s_addr, inet_ntoa(*adr));
 	return 1;
 }
+
+static WSADATA wsaData;
+
+static int platform_startup(){
+	AllocConsole();
+	FILE *stream;
+	freopen_s(&stream, "CONOUT$", "w", stdout);
+    freopen_s(&stream, "CONOUT$", "w", stderr);
+
+	int iResult;
+
+	// Initialize Winsock
+	iResult = WSAStartup(MAKEWORD(2,2), &wsaData);
+	if (iResult != 0) {
+		printf("WSAStartup failed: %d\n", iResult);
+		return 1;
+	}
+
+	return 0;	
+}
+
+#define close(x) closesocket(x)
 #endif
 #include <fcntl.h>
 #include <errno.h>
+
+static void socket_perror(const char* msg){
+	#if !defined(PLATFORM_WIN)
+		perror(msg);
+	#else
+		char *sys_mes = NULL;
+		FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM, NULL, WSAGetLastError(), 0, (LPTSTR)&sys_mes, 0, NULL);
+		fprintf(stderr, "%s: 0x%x %s\n", msg, WSAGetLastError(), sys_mes);
+		// MessageBox(0,sys_mes,0,0);
+		LocalFree(sys_mes);
+	#endif
+}
 
 #define MODEM_CPP
 namespace SNES {
@@ -28,6 +65,7 @@ Modem::Modem()
 	mode = Command;
 	echo_on = false;
 	socketfd = -1;
+	platform_startup();
 }
 
 void Modem::hangup(void)
@@ -53,7 +91,7 @@ bool Modem::hasData(void)
 		res = recv(socketfd, (char*)&d, 1, 0);
 		if (res < 0) {
 			if ((errno != EAGAIN) && (errno != EWOULDBLOCK)) {
-				perror("recv");
+				socket_perror("recv");
 				close(socketfd);
 				socketfd = -1;
 				mode = Command;
@@ -118,7 +156,7 @@ void Modem::writeData(uint8 data)
 	  printf("%02x ", data); fflush(stdout);
 	  if (socketfd >= 0) {
 		  if (send(socketfd, (char*)&data, 1, 0)<0) {
-			  perror("send");
+			  socket_perror("send");
 		  }
 	  }
 	  break;
@@ -134,6 +172,7 @@ void Modem::processCommandBuffer(void)
 {
 	const char *MsgOK = "\r\nOK\r\n";
 	const char *MsgERROR = "\r\nERROR\r\n";
+	int local_socketfd = -1;
 
 	if (strncmp((char*)lbuf, "AT", 2)) {
 		printf("???: \"%s\"\n", (char*)lbuf);
@@ -238,42 +277,41 @@ void Modem::processCommandBuffer(void)
 		destination.sin_port = htons(5555);
 		inet_aton("127.0.0.1", &destination.sin_addr);
 
-		socketfd = socket(AF_INET, SOCK_STREAM, 0);
-		if (socketfd == -1) {
-			perror("socket");
+		local_socketfd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+		if (local_socketfd == -1) {
+			socket_perror("socket");
 			answerCommand("\r\nBUSY\r\n");
 			return;
 		}
 
-		res = connect(socketfd, (struct sockaddr *)&destination, sizeof(struct sockaddr));
+		res = connect(local_socketfd, (struct sockaddr *)&destination, sizeof(struct sockaddr));
 		if (res == -1) {
-			perror("connect");
-			close(socketfd);
-			socketfd = -1;
+			socket_perror("connect");
+			close(local_socketfd);
+			local_socketfd = -1;
 			answerCommand("\r\nBUSY\r\n");
 			return;
 		}
-
 
 #if _WIN32
-		u_long val=0;
-		ioctlsocket(socketfd, FIONBIO, &val);
+		u_long val=1;
+		ioctlsocket(local_socketfd, FIONBIO, &val);
 #else
-		flags = fcntl(socketfd, F_GETFL, 0);
+		flags = fcntl(local_socketfd, F_GETFL, 0);
 		if (flags == -1) {
-			perror("fcntl");
-			close(socketfd);
-			socketfd = -1;
+			socket_perror("fcntl");
+			close(local_socketfd);
+			local_socketfd = -1;
 			answerCommand("\r\nBUSY\r\n");
 			return;
 		}
 
 		flags |= O_NONBLOCK;
 
-		if (fcntl(socketfd, F_SETFL, flags)) {
-			perror("fcntl");
-			close(socketfd);
-			socketfd = -1;
+		if (fcntl(local_socketfd, F_SETFL, flags)) {
+			socket_perror("fcntl");
+			close(local_socketfd);
+			local_socketfd = -1;
 			answerCommand("\r\nBUSY\r\n");
 			return;
 		}
@@ -282,6 +320,7 @@ void Modem::processCommandBuffer(void)
 		snprintf(connectStr, 32, "\r\nCONNECT %d\r\n", connection_rate);
 		answerCommand(connectStr);
 		mode = Connected;
+		socketfd = local_socketfd;
 		return;
 	}
 
